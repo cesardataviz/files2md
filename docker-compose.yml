@@ -1,0 +1,43 @@
+# Perfiles: lite | export | full. Usa uno a la vez (mismo puerto). Todos publican solo en 127.0.0.1.
+
+x-app-env: &app-env
+  FILES2MD_HOST: 0.0.0.0             # dentro del contenedor; el puerto se publica solo en loopback
+  FILES2MD_DATA_DIR: /data
+  FILES2MD_FRONTEND_DIR: /app/frontend_dist
+  FILES2MD_MAX_UPLOAD_MB: ${FILES2MD_MAX_UPLOAD_MB:-200}
+  FILES2MD_JOB_TTL_HOURS: ${FILES2MD_JOB_TTL_HOURS:-24}
+  FILES2MD_API_TOKEN: ${FILES2MD_API_TOKEN:-}
+
+x-volumes: &volumes
+  - files2md-data:/data
+  - files2md-models:/home/appuser/.cache   # pesos de modelos (Docling/OCR): descarga en primer uso
+
+services:
+  lite:
+    profiles: ["lite"]
+    build: { context: ., dockerfile: docker/Dockerfile, target: lite }
+    environment: *app-env
+    ports: ["127.0.0.1:8000:8000"]
+    volumes: *volumes
+
+  export:
+    profiles: ["export"]
+    build: { context: ., dockerfile: docker/Dockerfile, target: export }
+    environment: *app-env
+    ports: ["127.0.0.1:8000:8000"]
+    volumes: *volumes
+
+  full:
+    profiles: ["full"]
+    build: { context: ., dockerfile: docker/Dockerfile, target: full }
+    environment:
+      <<: *app-env
+      FILES2MD_ENABLE_OCR: "true"
+      FILES2MD_ENABLE_VLM: ${FILES2MD_ENABLE_VLM:-false}
+      FILES2MD_VLM_ENDPOINT: ${FILES2MD_VLM_ENDPOINT:-}
+    ports: ["127.0.0.1:8000:8000"]
+    volumes: *volumes
+
+volumes:
+  files2md-data:
+  files2md-models:
