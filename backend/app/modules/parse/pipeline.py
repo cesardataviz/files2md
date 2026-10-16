@@ -9,10 +9,11 @@ from app.core.registry import JobContext, operation
 from app.modules.parse.classify import InputKind, classify
 from app.modules.parse.engines.base import Engine
 from app.modules.parse.engines.docling_engine import DoclingEngine
-from app.modules.parse.engines.ocr_vlm import OcrEngine, VlmEngine
+from app.modules.parse.engines.ocr_vlm import VlmEngine
+from app.modules.parse.engines.tesseract_engine import TesseractEngine
 from app.modules.parse.export import export
 
-ENGINES: dict[str, Engine] = {e.name: e for e in (DoclingEngine(), OcrEngine(), VlmEngine())}
+ENGINES: dict[str, Engine] = {e.name: e for e in (DoclingEngine(), TesseractEngine(), VlmEngine())}
 
 # Orden de preferencia por tipo de entrada (el determinista siempre primero cuando aplica).
 PREFERENCE: dict[InputKind, list[str]] = {

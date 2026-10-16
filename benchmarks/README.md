@@ -1,32 +1,66 @@
-# Benchmark de motores (módulo P2)
+# Benchmark de motores
 
-Objetivo: decidir con datos qué motor usar por tipo de entrada, y publicar los resultados.
+Objetivo: decidir **con datos** qué motor usar para cada tipo de documento, y saber cuánto cuesta en tiempo.
 
-## Estructura prevista
+## Uso rápido
+
+Desde la raíz del repo:
+
+```bash
+pip install -e "backend[dev,bench]"
+python benchmarks/make_synthetic.py      # 6 PDFs escaneados sintéticos + su Markdown correcto
+python benchmarks/run.py                 # todos los motores disponibles
+python benchmarks/run.py --engines ocr   # solo uno
+```
+
+Salida: una línea por documento, un resumen por motor y categoría, y un CSV en `benchmarks/results/`.
+
+```
+motor    categoría      docs  éxito     CER     WER  s/pág
+ocr      synthetic         6   100%   0.000   0.000  3.428
+```
+
+> Los sintéticos son **más fáciles** que un escaneo real. Sirven para comprobar que todo funciona,
+> no para afirmar qué tan bueno es un motor.
+
+## Con tus propios documentos
 
 ```
 benchmarks/
-  dataset/            # documentos propios o sin derechos de autor (NO commitear material con copyright)
-    digital/  scanned/  tables/  multicolumn/  forms/
-  ground_truth/       # Markdown esperado, corregido a mano (30-50 documentos)
-  run.py              # ejecuta cada motor sobre cada documento, guarda resultados + tiempos
-  metrics.py          # edit distance normalizada (texto), TEDS (tablas), orden de lectura
-  results/            # CSV/JSON por corrida (versionar resúmenes, no los modelos)
+  dataset/
+    escaneados/contrato_01.pdf          # la carpeta es la "categoría" en el resumen
+    tablas/reporte_ventas.pdf
+  ground_truth/
+    escaneados/contrato_01.md           # mismo nombre y carpeta, extensión .md
+    tablas/reporte_ventas.md
 ```
+
+1. Elige entre 10 y 50 documentos variados: escaneos buenos y malos, tablas, dos columnas, formularios.
+2. Escribe a mano el Markdown correcto de cada uno (el *ground truth*). Es lo más lento y lo más valioso:
+   sin él solo se mide el tiempo.
+3. Corre `python benchmarks/run.py`.
+
+**Privacidad:** `dataset/`, `ground_truth/` y `results/` están en `.gitignore`. Nunca subas documentos
+personales a este repo público. Si quieres publicar resultados, copia el resumen a mano y revisa que no
+incluya nombres de archivo sensibles.
 
 ## Métricas
 
-| Dimensión | Métrica |
-|---|---|
-| Texto | Distancia de edición normalizada (CER/WER) |
-| Tablas | TEDS (verificar implementación de referencia) |
-| Estructura | Orden de lectura, jerarquía de encabezados |
-| Costo | Segundos/página y RAM/VRAM pico en CPU y GPU |
-| Robustez | % de documentos que terminan sin error |
+| Métrica | Qué mide | Cómo leerla |
+|---|---|---|
+| **CER** | Errores de carácter / caracteres de la referencia | 0.02 = 2 de cada 100 caracteres mal |
+| **WER** | Errores de palabra / palabras de la referencia | Más severa: un carácter mal arruina la palabra |
+| **s/pág** | Segundos por página | Depende del hardware: compara motores en la misma máquina |
+| **éxito** | % de documentos que terminaron sin error | |
 
-## Comparación mínima
+CER y WER se calculan sobre el texto **sin sintaxis Markdown**: la estructura (títulos, tablas) se evaluará
+con métricas propias (pendiente: TEDS para tablas y orden de lectura). Pueden superar 1.0 si el motor
+inventa texto, lo cual sirve para detectar alucinaciones.
 
-`docling` (determinista) vs `ocr` vs `vlm`, separando por categoría de documento. El resultado esperado
-es una tabla de decisión: qué motor para qué tipo de entrada, con su costo.
+Implementación: [`backend/app/eval/metrics.py`](../backend/app/eval/metrics.py).
 
-Estado: sin dataset ni scripts todavía.
+## Pendiente
+
+- Dataset real con ground truth.
+- Métricas de estructura: TEDS (tablas), jerarquía de títulos, orden de lectura.
+- Comparar con Docling y un VLM local cuando estén disponibles.

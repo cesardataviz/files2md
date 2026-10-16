@@ -105,7 +105,7 @@ def test_pipeline_end_to_end_with_stub_engine(tmp_path, monkeypatch):
 
 
 def test_scanned_without_ocr_fails_with_actionable_message(tmp_path):
-    with make_client(tmp_path) as client:
+    with make_client(tmp_path, enable_ocr=False) as client:
         job = submit(client, "escaneo.pdf", image_pdf())
         assert job["state"] == "failed"
         assert job["meta"]["input_kind"] == "scanned"

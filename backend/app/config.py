@@ -28,8 +28,15 @@ class Settings(BaseSettings):
     # Ruta del frontend compilado (Vite). Si existe, la API lo sirve.
     frontend_dir: Path = Path("./frontend_dist")
 
-    # Motores pesados: apagados por defecto, se habilitan por perfil/entorno.
-    enable_ocr: bool = False
+    # OCR (Tesseract). Activo por defecto: si el binario no está instalado, el job falla con
+    # un mensaje que dice qué instalar. En Windows suele estar en
+    # C:\Program Files\Tesseract-OCR\tesseract.exe y no siempre queda en el PATH.
+    enable_ocr: bool = True
+    tesseract_cmd: str = ""  # vacío = buscar "tesseract" en el PATH
+    ocr_langs: str = "spa+eng"  # idiomas de Tesseract unidos por "+"
+    ocr_dpi: int = 300  # resolución al rasterizar PDFs; 300 es el estándar para OCR
+
+    # VLM: apagado por defecto (opt-in explícito).
     enable_vlm: bool = False
     vlm_endpoint: str = ""  # p. ej. Ollama local: http://localhost:11434
 

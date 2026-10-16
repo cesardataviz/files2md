@@ -1,7 +1,8 @@
-"""Motores para escaneados/imágenes. Esqueleto: se implementan al elegir OCR tras el benchmark.
+"""Motor VLM (modelo de visión + lenguaje) para escaneados complejos. Esqueleto, opt-in.
 
-Candidatos a comparar (verificar licencias vigentes antes de adoptar): Tesseract, PaddleOCR,
-Surya/Marker (licencia con restricciones comerciales), VLM local vía Ollama.
+El OCR con Tesseract vive en tesseract_engine.py. Otros candidatos a comparar en el benchmark
+(verificar licencias vigentes de código Y pesos antes de adoptar): PaddleOCR, VLM local vía Ollama.
+Marker/Surya quedan fuera por restricciones comerciales.
 """
 from __future__ import annotations
 
@@ -9,19 +10,6 @@ from pathlib import Path
 
 from app.modules.parse.classify import InputKind
 from app.modules.parse.engines.base import Engine, ParseResult
-
-
-class OcrEngine(Engine):
-    name = "ocr"
-    handles = {InputKind.scanned, InputKind.mixed, InputKind.image}
-
-    def available(self, settings) -> tuple[bool, str]:
-        if not settings.enable_ocr:
-            return False, "OCR deshabilitado (FILES2MD_ENABLE_OCR=true y perfil Docker 'full')"
-        return False, "Motor OCR aún no implementado"
-
-    def convert(self, path: Path, settings) -> ParseResult:
-        raise NotImplementedError("TODO: layout analysis + OCR -> Markdown")
 
 
 class VlmEngine(Engine):

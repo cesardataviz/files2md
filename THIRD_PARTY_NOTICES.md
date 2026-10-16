@@ -10,7 +10,9 @@
 | Docling | Parsing digital | MIT | Dependencia opcional (`parse`) |
 | Pandoc | Markdown→docx/pdf | GPL | Proceso externo en imagen `export` |
 | Typst | Markdown→PDF | Apache-2.0 | Proceso externo en imagen `export` |
-| Tesseract | OCR | Apache-2.0 | Proceso externo en imagen `full` |
+| Tesseract y sus modelos de idioma (tessdata) | OCR | Apache-2.0 | Proceso externo; se instala aparte o en imagen `full` |
+| pypdfium2 (PDFium) | Rasterizar PDFs para OCR | Apache-2.0 / BSD-3-Clause | Dependencia Python |
+| rapidfuzz | Distancia de edición en el benchmark | MIT | Dependencia opcional (`bench`) |
 | React, Vite | Frontend | MIT | Dependencia frontend |
 
 ## Evitados deliberadamente (el repo es MIT)

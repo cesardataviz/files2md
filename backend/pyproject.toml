@@ -12,13 +12,15 @@ dependencies = [
   "pydantic-settings>=2.2",
   "pypdf>=4.2",
   "pillow>=10.2",
+  "pypdfium2>=4.0",  # rasterizar PDFs para OCR (Apache-2.0/BSD)
 ]
 
 [project.optional-dependencies]
 # Parser determinista para PDFs/Office digitales
 parse = ["docling>=2.0"]
-# Se completa al implementar el motor OCR elegido tras el benchmark
-ocr = []
+# El OCR usa el binario de Tesseract (se instala aparte, no por pip)
+# Distancia de edición en C++: acelera las métricas en documentos largos
+bench = ["rapidfuzz>=3.0"]
 scale = ["redis>=5.0", "arq>=0.25"]
 dev = ["pytest>=8.0", "httpx>=0.27", "ruff>=0.4"]
 
@@ -34,3 +36,10 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint]
+# Errores reales (sintaxis, nombres indefinidos, imports sin usar) y orden de imports.
+select = ["E9", "F", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]

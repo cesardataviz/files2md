@@ -96,7 +96,7 @@ flowchart TD
 
     cls -- digital --> docling["Docling<br/>determinista"]
     cls -- office --> docling
-    cls -- scanned --> ocr["OCR<br/>pendiente"]
+    cls -- scanned --> ocr["OCR Tesseract<br/>texto, títulos, viñetas"]
     cls -- mixed --> ocr
     cls -- image --> ocr
     ocr -. "si no está disponible" .-> vlm["VLM local<br/>pendiente, opt-in"]
@@ -115,6 +115,16 @@ flowchart TD
 
 - `classify` mide caracteres extraíbles por página (`MIN_CHARS_PER_PAGE`, calibrable con el benchmark).
 - `auto` sigue la tabla `PREFERENCE` de `pipeline.py`.
+- **OCR (Tesseract):** cada página se rasteriza a 300 dpi con `pypdfium2` y Tesseract devuelve cada palabra con
+  su caja, bloque, párrafo, línea y confianza (formato TSV). Con eso se reconstruye el Markdown:
+  - **Párrafos:** se respetan los bloques de Tesseract y se reparan palabras cortadas con guion al final de línea.
+  - **Títulos:** línea con letra ≥ 1,3× la mediana de la página (`#` si ≥ 1,6×). Es una heurística: no
+    detecta negritas del mismo tamaño y falla en páginas con muy pocas líneas.
+  - **Viñetas:** Tesseract suele leer `•` como "e", "o" o "+". No se filtra por letra ("o" es una palabra en
+    español), sino por geometría: un carácter suelto seguido de un hueco ≥ 0,8× la altura de la letra.
+  - **Confianza:** media por página en `meta.ocr_page_conf`; las páginas con menos de 60 se listan en
+    `meta.ocr_low_conf_pages` para revisarlas a mano.
+  - **No soporta todavía:** tablas (salen como párrafos) y orden de lectura garantizado en varias columnas.
 - **Formato personalizado:** plantillas de Word vía `--reference-doc` (pendiente exponerlo en la API).
 - Post-proceso con LLM: **no incluido**. Si se añade, opt-in y con diff visible (riesgo de "corregir" cifras).
 
@@ -125,7 +135,7 @@ flowchart TD
 | `operation` | `parse.to_document` |
 | `params` | `engine`: `auto\|docling\|ocr\|vlm` · `output`: `md\|docx\|pdf` |
 | `state` | `queued → running → succeeded \| failed \| cancelled` |
-| `meta` | `input_kind`, `pages`, `engine`, `engine_fallback_notes`, `elapsed_s` |
+| `meta` | `input_kind`, `pages`, `engine`, `engine_fallback_notes`, `elapsed_s`; con OCR además `ocr_mean_conf`, `ocr_page_conf`, `ocr_low_conf_pages`, `ocr_langs`, `ocr_dpi` |
 
 ## Estado de implementación
 
@@ -136,10 +146,11 @@ flowchart TD
 | Flujo completo con motor simulado → `.md` | Probado |
 | Motor Docling real | Implementado, **sin probar** |
 | Export docx/pdf (Pandoc + Typst) | Implementado, **sin probar**; falta instalar Typst en la imagen |
-| Motores OCR y VLM | Esqueleto (`NotImplementedError`) |
+| Motor OCR (Tesseract) | Implementado y probado con OCR real sobre documentos sintéticos; **sin probar con escaneos reales** |
+| Motor VLM | Esqueleto (`NotImplementedError`) |
 | Plantillas Word personalizadas | No expuesto |
 | `RedisQueue` | Esqueleto |
-| Benchmark | Solo estructura |
+| Benchmark | Métricas CER/WER, generador sintético y runner implementados; **falta dataset real** |
 
 ## Decisiones
 

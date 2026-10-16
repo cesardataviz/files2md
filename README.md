@@ -17,7 +17,7 @@ flowchart TD
 
     cls -- digital --> docling["Docling<br/>determinista"]
     cls -- office --> docling
-    cls -- scanned --> ocr["OCR<br/>pendiente"]
+    cls -- scanned --> ocr["OCR Tesseract<br/>texto, títulos, viñetas"]
     cls -- mixed --> ocr
     cls -- image --> ocr
     ocr -. "si no está disponible" .-> vlm["VLM local<br/>pendiente, opt-in"]
@@ -43,7 +43,7 @@ Los diagramas de componentes y del ciclo de vida de un job están en [docs/ARCHI
 cp .env.example .env
 docker compose --profile lite up --build      # PDFs digitales y Office -> Markdown
 # docker compose --profile export up --build  # + exportar a Word/PDF (Pandoc)
-# docker compose --profile full up --build    # + OCR para escaneados (pendiente)
+# docker compose --profile full up --build    # + OCR para escaneados (Tesseract, español e inglés)
 ```
 
 Abre http://127.0.0.1:8000. El servicio solo escucha en `127.0.0.1` por defecto.
@@ -52,17 +52,46 @@ Abre http://127.0.0.1:8000. El servicio solo escucha en `127.0.0.1` por defecto.
 
 ```bash
 cd backend
-python -m venv .venv && source .venv/bin/activate
+python -m venv .venv
+source .venv/bin/activate            # Windows (PowerShell): .venv\Scripts\Activate.ps1
 pip install -e ".[dev,parse]"
 uvicorn app.main:app --reload
 pytest
 ```
+
+Requiere Python 3.11 o superior.
+
+Frontend (en otra terminal):
 
 ```bash
 cd frontend
 npm install
 npm run dev                         # proxy a http://127.0.0.1:8000
 ```
+
+### OCR (PDFs escaneados e imágenes)
+
+El OCR usa [Tesseract](https://github.com/tesseract-ocr/tesseract), que se instala aparte (no por pip):
+
+- **Windows:** instala Tesseract y marca el idioma **Spanish** en el instalador. Si no queda en el `PATH`,
+  indica la ruta en `backend/.env` (el `.env` se lee desde la carpeta donde ejecutas `uvicorn`):
+  `FILES2MD_TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe`
+- **Linux:** `sudo apt install tesseract-ocr tesseract-ocr-spa`
+- **macOS:** `brew install tesseract tesseract-lang`
+
+Comprueba los idiomas con `tesseract --list-langs`: deben aparecer `spa` y `eng`.
+Sin Tesseract, files2md sigue funcionando con documentos digitales; los escaneados fallan con un mensaje
+que dice qué instalar.
+
+### Benchmark
+
+```bash
+pip install -e "backend[dev,bench]"
+python benchmarks/make_synthetic.py      # documentos de prueba con su Markdown correcto
+python benchmarks/run.py                 # CER, WER y segundos por página, por motor
+```
+
+Para medir con tus propios documentos, ver [benchmarks/README.md](benchmarks/README.md).
 
 ## API
 

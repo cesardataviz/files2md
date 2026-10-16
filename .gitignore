@@ -8,3 +8,10 @@ dist/
 .env
 .pytest_cache/
 .ruff_cache/
+
+# Benchmark: por defecto NADA de datos se sube al repo público.
+# dataset/ y ground_truth/ pueden contener documentos personales; synthetic/ se regenera con make_synthetic.py.
+# results/ incluye nombres de archivo: publica solo resúmenes revisados a mano.
+benchmarks/dataset/
+benchmarks/ground_truth/
+benchmarks/results/
