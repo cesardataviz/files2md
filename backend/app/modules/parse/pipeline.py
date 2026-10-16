@@ -17,7 +17,9 @@ ENGINES: dict[str, Engine] = {e.name: e for e in (DoclingEngine(), TesseractEngi
 
 # Orden de preferencia por tipo de entrada (el determinista siempre primero cuando aplica).
 PREFERENCE: dict[InputKind, list[str]] = {
-    InputKind.digital: ["docling"],
+    # Si Docling no está instalado (pesa varios GB), un PDF digital también se puede leer con OCR:
+    # más lento y menos fiel, pero funciona. La nota de fallback queda en job.meta.
+    InputKind.digital: ["docling", "ocr"],
     InputKind.office: ["docling"],
     InputKind.scanned: ["ocr", "vlm"],
     InputKind.mixed: ["ocr", "vlm", "docling"],

@@ -114,7 +114,8 @@ flowchart TD
 ```
 
 - `classify` mide caracteres extraíbles por página (`MIN_CHARS_PER_PAGE`, calibrable con el benchmark).
-- `auto` sigue la tabla `PREFERENCE` de `pipeline.py`.
+- `auto` sigue la tabla `PREFERENCE` de `pipeline.py`. Un PDF digital usa Docling y, si no está instalado,
+  cae a OCR (queda registrado en `meta.engine_fallback_notes`).
 - **OCR (Tesseract):** cada página se rasteriza a 300 dpi con `pypdfium2` y Tesseract devuelve cada palabra con
   su caja, bloque, párrafo, línea y confianza (formato TSV). Con eso se reconstruye el Markdown:
   - **Párrafos:** se respetan los bloques de Tesseract y se reparan palabras cortadas con guion al final de línea.

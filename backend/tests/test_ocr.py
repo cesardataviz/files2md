@@ -125,3 +125,14 @@ def test_scanned_pdf_end_to_end_through_api(tmp_path):
         assert job["meta"]["ocr_mean_conf"] > 80
         md = client.get(f"/api/jobs/{job_id}/outputs/{job['outputs'][0]}").text
         assert md == doc.markdown()
+
+
+@requires_tesseract
+def test_digital_pdf_falls_back_to_ocr_when_docling_missing(tmp_path, monkeypatch):
+    from app.modules.parse import pipeline
+    from app.modules.parse.classify import InputKind
+
+    monkeypatch.setattr(pipeline.ENGINES["docling"], "available", lambda s: (False, "Docling no instalado"))
+    engine, notes = pipeline.select_engine(InputKind.digital, "auto", Settings())
+    assert engine.name == "ocr"
+    assert notes == ["docling: Docling no instalado"]
