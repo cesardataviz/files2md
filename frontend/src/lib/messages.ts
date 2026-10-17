@@ -58,11 +58,18 @@ export function jobErrorMessage(error: string | null): string {
   // Los PDF digitales caen a OCR si falta Docling; este error solo aparece con Word, Excel o PowerPoint.
   if (/Docling no instalado/i.test(e))
     return "Para convertir documentos de Word, Excel o PowerPoint hay que instalar el módulo de texto digital (Docling).";
-  if (/Pandoc/i.test(e)) return "Para generar Word o PDF hay que instalar Pandoc. Mientras tanto, elige Markdown.";
+  if (/python-docx|paquete typst/i.test(e))
+    return "Falta un componente para generar Word o PDF. Reinstala el backend con pip install -e . y vuelve a intentarlo.";
   if (/Ningún motor disponible/i.test(e))
     return "Esta instalación no tiene un lector para este tipo de documento.";
   if (/Tipo de entrada no soportado/i.test(e)) return "Este tipo de archivo no se puede convertir.";
   return "La conversión falló. Prueba con otro archivo o revisa el registro del servidor.";
+}
+
+/** Consejo cuando la foto tiene poca resolución (lado corto < 1000 px). */
+export function photoTipNotice(job: Job): string | null {
+  if (!job.meta.image_small) return null;
+  return "La foto tiene poca resolución. Para un mejor resultado, tómala de frente, con buena luz, sin reflejos y con la cámara a máxima calidad.";
 }
 
 export function lowConfidenceNotice(job: Job): string | null {

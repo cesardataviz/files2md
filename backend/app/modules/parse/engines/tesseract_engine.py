@@ -29,11 +29,15 @@ from PIL import Image, ImageSequence
 
 from app.modules.parse.classify import InputKind
 from app.modules.parse.engines.base import Engine, ParseResult, ProgressFn
+from app.modules.parse.preprocess import preprocess
 
 HEADING_RATIO = 1.3  # una línea es candidata a título si su letra es >= 1.3x la mediana de la página
 H1_RATIO = 1.6  # a partir de aquí, título principal (#). Ej.: 18 pt sobre texto de 11 pt = 1.64
 MAX_HEADING_WORDS = 14  # un "título" de 40 palabras casi seguro es un párrafo
-LOW_CONFIDENCE = 60.0  # páginas con confianza media menor se reportan como dudosas
+HEADING_MIN_CONF = 70.0  # en fotos, manchas grandes (fotos, banners) se leen como "letras grandes"
+NOISE_MAX_CHARS = 2  # fragmentos de 1-2 caracteres con baja confianza casi siempre son ruido
+LOW_CONFIDENCE = 60.0
+SMALL_IMAGE_PX = 1000  # lado corto menor: foto de baja resolución, se avisa al usuario  # páginas con confianza media menor se reportan como dudosas
 BULLETS = {"•", "·", "▪", "◦", "-", "–", "*"}
 # Tesseract suele leer "•" como "e", "o", "+"... No se puede filtrar por letra ("o" y "e" son palabras
 # en español), así que se usa geometría: un carácter suelto seguido de un hueco mucho mayor que un espacio.
@@ -145,8 +149,22 @@ def words_to_markdown(words: list[Word]) -> tuple[str, list[float]]:
         texts = [" ".join(w.text for w in lines[k]) for k in line_keys]
         n_words = sum(len(lines[k]) for k in line_keys)
         ratio = min(line_height[k] for k in line_keys) / page_median
+        par_words = [w for k in line_keys for w in lines[k]]
+        par_conf = statistics.fmean(w.conf for w in par_words) if par_words else 0.0
+        letters = sum(ch.isalpha() for t in texts for ch in t)
+        alnum = sum(ch.isalnum() for t in texts for ch in t)
 
-        if ratio >= HEADING_RATIO and len(line_keys) <= 2 and n_words <= MAX_HEADING_WORDS:
+        if alnum <= NOISE_MAX_CHARS and par_conf < LOW_CONFIDENCE:
+            continue  # ruido: bordes de fotos, manchas, restos de dibujos
+
+        is_heading = (
+            ratio >= HEADING_RATIO
+            and len(line_keys) <= 2
+            and n_words <= MAX_HEADING_WORDS
+            and par_conf >= HEADING_MIN_CONF
+            and letters >= 3
+        )
+        if is_heading:
             prefix = "#" if ratio >= H1_RATIO else "##"
             blocks.append(f"{prefix} {' '.join(texts)}")
             continue
@@ -254,8 +272,21 @@ class TesseractEngine(Engine):
         page_conf: list[float] = []
         all_conf: list[float] = []
 
+        is_pdf = path.suffix.lower() == ".pdf"
+        mode = getattr(settings, "ocr_preprocess", "auto")
+        # auto: solo imágenes (fotos de celular). Los PDF escaneados ya vienen planos y bien iluminados.
+        use_preprocess = mode == "always" or (mode == "auto" and not is_pdf)
+        applied: list[str] = []
+        small_image = False
+
         with tempfile.TemporaryDirectory(prefix="files2md-ocr-") as tmp:
             for n, img in enumerate(iter_page_images(path, settings.ocr_dpi), start=1):
+                if not is_pdf and n == 1:
+                    small_image = min(img.size) < SMALL_IMAGE_PX
+                if use_preprocess:
+                    img, steps = preprocess(img)
+                    if n == 1:
+                        applied = steps
                 png = Path(tmp) / f"page-{n}.png"
                 img.save(png)
                 img.close()
@@ -279,6 +310,8 @@ class TesseractEngine(Engine):
             meta={
                 "ocr_langs": settings.ocr_langs,
                 "ocr_dpi": settings.ocr_dpi,
+                "ocr_preprocess": applied,
+                "image_small": small_image,
                 "ocr_mean_conf": round(statistics.fmean(all_conf), 1) if all_conf else 0.0,
                 "ocr_page_conf": page_conf,
                 "ocr_low_conf_pages": [i for i, c in enumerate(page_conf, 1) if c < LOW_CONFIDENCE],

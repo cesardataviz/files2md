@@ -8,7 +8,7 @@ Desde la raíz del repo:
 
 ```bash
 pip install -e "backend[dev,bench]"
-python benchmarks/make_synthetic.py      # 6 PDFs escaneados sintéticos + su Markdown correcto
+python benchmarks/make_synthetic.py      # 6 escaneos y 9 fotos de celular sintéticos + su Markdown correcto
 python benchmarks/run.py                 # todos los motores disponibles
 python benchmarks/run.py --engines ocr   # solo uno
 ```
@@ -17,8 +17,26 @@ Salida: una línea por documento, un resumen por motor y categoría, y un CSV en
 
 ```
 motor    categoría      docs  éxito     CER     WER  s/pág
-ocr      synthetic         6   100%   0.000   0.000  3.428
+ocr      escaneos          6   100%   0.000   0.000  2.667
+ocr      fotos             9   100%   0.000   0.000  2.524
 ```
+
+### Resultado del preprocesamiento de fotos (16-oct-2026)
+
+Ablación sobre las 9 fotos sintéticas (hoja sobre mesa, perspectiva, reflejo, sombra, JPG comprimido):
+
+| Preprocesamiento | CER medio | Peor caso |
+|---|---|---|
+| Ninguno | 0,248 | 0,780 |
+| Solo igualar luz | 0,196 | 0,694 |
+| Solo ampliar | 0,323 | 1,000 |
+| Solo perspectiva | 0,393 | 0,499 |
+| Perspectiva + luz | 0,002 | 0,014 |
+| **Perspectiva + ampliar + luz** (por defecto) | **0,000** | **0,000** |
+
+Lección: sin preprocesar, el OCR no detectaba zonas enteras con reflejo (la confianza seguía alta, ~90). Ninguna
+técnica sola basta; funciona la combinación. Con una foto real de un libro, la cobertura de palabras impresas
+subió de 90 % a 98 %; el texto manuscrito sigue fuera del alcance de Tesseract.
 
 > Los sintéticos son **más fáciles** que un escaneo real. Sirven para comprobar que todo funciona,
 > no para afirmar qué tan bueno es un motor.

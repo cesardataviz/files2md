@@ -16,7 +16,7 @@ class QueueBackend(ABC):
 
 class InProcessQueue(QueueBackend):
     """Pool de hilos. Suficiente para uso local; las operaciones pesadas lanzan subprocesos
-    (LibreOffice, Pandoc) o liberan el GIL (Pillow, modelos)."""
+    (Tesseract) o liberan el GIL (Pillow, modelos)."""
 
     def __init__(self, runner: Callable[[str], None], workers: int = 2):
         self._runner = runner

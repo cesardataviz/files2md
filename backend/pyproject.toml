@@ -13,6 +13,11 @@ dependencies = [
   "pypdf>=4.2",
   "pillow>=10.2",
   "pypdfium2>=4.0",  # rasterizar PDFs para OCR (Apache-2.0/BSD)
+  "mistune>=3.0",  # Markdown -> estructura para exportar (BSD-3)
+  "python-docx>=1.1",  # exportar a Word (MIT)
+  "typst>=0.12",  # exportar a PDF; incluye el compilador (Apache-2.0)
+  "opencv-python-headless>=4.8",  # preprocesar fotos antes del OCR (Apache-2.0)
+  "numpy>=1.26",
 ]
 
 [project.optional-dependencies]
@@ -30,6 +35,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["app*"]
+
+[tool.setuptools.package-data]
+"app.modules.parse" = ["templates/*.typ"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

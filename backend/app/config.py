@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     tesseract_cmd: str = ""  # vacío = buscar "tesseract" en el PATH
     ocr_langs: str = "spa+eng"  # idiomas de Tesseract unidos por "+"
     ocr_dpi: int = 300  # resolución al rasterizar PDFs; 300 es el estándar para OCR
+    # Preprocesamiento de imagen antes del OCR: "auto" (solo imágenes/fotos), "always" u "off".
+    ocr_preprocess: str = "auto"
 
     # VLM: apagado por defecto (opt-in explícito).
     enable_vlm: bool = False

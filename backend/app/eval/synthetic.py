@@ -138,3 +138,60 @@ def write_dataset(dataset_dir: Path, truth_dir: Path, noise_levels: tuple[float,
             (truth_dir / f"{stem}.md").write_text(doc.markdown(), encoding="utf-8")
             count += 1
     return count
+
+
+def photo(doc: SyntheticDoc, seed: int = 0, quality: int = 40, width: int = 960) -> Image.Image:
+    """Simula una foto de celular de la hoja: mesa de fondo, perspectiva, luz desigual con reflejo,
+    leve desenfoque, baja resolución y compresión JPG fuerte. Es el caso que peor le va al OCR."""
+    import cv2
+    import numpy as np
+
+    rng = random.Random(seed)
+    page = np.array(render(doc).convert("RGB"), dtype=np.float32)
+    h, w = page.shape[:2]
+
+    # Hoja sobre una mesa, fotografiada en ángulo (perspectiva).
+    canvas_w, canvas_h = int(w * 1.25), int(h * 1.18)
+    m = 0.06
+    jitter = lambda: rng.uniform(-0.035, 0.035)  # noqa: E731
+    dst = np.float32([
+        [canvas_w * (m + jitter()), canvas_h * (m + jitter())],
+        [canvas_w * (1 - m + jitter()), canvas_h * (m + 0.02 + jitter())],
+        [canvas_w * (1 - m - 0.03 + jitter()), canvas_h * (1 - m + jitter())],
+        [canvas_w * (m + 0.04 + jitter()), canvas_h * (1 - m - 0.01 + jitter())],
+    ])
+    src = np.float32([[0, 0], [w, 0], [w, h], [0, h]])
+    matrix = cv2.getPerspectiveTransform(src, dst)
+    table = (90, 72, 58)  # mesa de madera oscura
+    img = cv2.warpPerspective(page, matrix, (canvas_w, canvas_h), borderValue=table)
+
+    # Luz desigual: gradiente lateral + un reflejo brillante + una sombra.
+    yy, xx = np.mgrid[0:canvas_h, 0:canvas_w].astype(np.float32)
+    gradient = 0.72 + 0.35 * (xx / canvas_w)
+    gx, gy = rng.uniform(0.3, 0.7) * canvas_w, rng.uniform(0.3, 0.6) * canvas_h
+    glare = 0.45 * np.exp(-(((xx - gx) / (canvas_w * 0.18)) ** 2 + ((yy - gy) / (canvas_h * 0.10)) ** 2))
+    shadow = 1 - 0.30 * np.exp(-(((yy - canvas_h) / (canvas_h * 0.35)) ** 2))
+    light = (gradient * shadow)[..., None]
+    img = np.clip(img * light + 255 * glare[..., None] * 0.9, 0, 255)
+
+    img = cv2.GaussianBlur(img, (0, 0), 1.1)
+    scale = width / canvas_w
+    img = cv2.resize(img, (width, int(canvas_h * scale)), interpolation=cv2.INTER_AREA)
+    ok, encoded = cv2.imencode(".jpg", img[..., ::-1].astype(np.uint8), [cv2.IMWRITE_JPEG_QUALITY, quality])
+    return Image.open(__import__("io").BytesIO(encoded.tobytes())).convert("RGB")
+
+
+def write_photo_dataset(dataset_dir: Path, truth_dir: Path) -> int:
+    """Fotos de celular sintéticas (JPG) con su ground truth."""
+    dataset_dir.mkdir(parents=True, exist_ok=True)
+    truth_dir.mkdir(parents=True, exist_ok=True)
+    count = 0
+    for i, doc in enumerate(SAMPLES, 1):
+        for variant, (quality, width) in enumerate([(70, 1200), (40, 960), (35, 720)], 1):
+            stem = f"foto{i:02d}_v{variant}"
+            photo(doc, seed=i * 10 + variant, quality=quality, width=width).save(
+                dataset_dir / f"{stem}.jpg", "JPEG", quality=95
+            )
+            (truth_dir / f"{stem}.md").write_text(doc.markdown(), encoding="utf-8")
+            count += 1
+    return count

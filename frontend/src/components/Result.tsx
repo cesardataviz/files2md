@@ -1,20 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchText, outputUrl, type Job, type OutputFormat } from "../lib/api";
 import { renderMarkdown } from "../lib/markdown";
-import { extensionOf, FORMAT_LABEL, lowConfidenceNotice } from "../lib/messages";
+import { extensionOf, FORMAT_LABEL, lowConfidenceNotice, photoTipNotice } from "../lib/messages";
 import Breakable from "./Breakable";
 
 interface Props {
   file: File;
-  previewUrl: string;
   job: Job;
   output: OutputFormat;
   onReset: () => void;
+  resetLabel?: string;
 }
 
 type Tab = "preview" | "source";
 
-export default function Result({ file, previewUrl, job, output, onReset }: Props) {
+export default function Result({ file, job, output, onReset, resetLabel = "Convertir otro documento" }: Props) {
+  // La vista previa del original se genera en el navegador: no hace falta volver a pedirlo al servidor.
+  const [previewUrl, setPreviewUrl] = useState("");
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
   const [markdown, setMarkdown] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [tab, setTab] = useState<Tab>("preview");
@@ -31,7 +38,7 @@ export default function Result({ file, previewUrl, job, output, onReset }: Props
   }, [job.id, mdName]);
 
   const html = useMemo(() => (markdown ? renderMarkdown(markdown) : ""), [markdown]);
-  const notice = lowConfidenceNotice(job);
+  const notices = [lowConfidenceNotice(job), photoTipNotice(job)].filter((n): n is string => n !== null);
   const ext = extensionOf(file.name);
   const isPdf = ext === "pdf";
   const isImage = ["jpg", "jpeg", "png", "webp", "bmp", "gif"].includes(ext);
@@ -80,14 +87,14 @@ export default function Result({ file, previewUrl, job, output, onReset }: Props
         {copied ? "Texto copiado al portapapeles" : ""}
       </p>
 
-      {notice && (
-        <p className="notice notice-warn" role="status">
+      {notices.map((n) => (
+        <p key={n} className="notice notice-warn" role="status">
           <svg viewBox="0 0 20 20" aria-hidden="true">
             <path d="M10 3 2 17h16zM10 8v4M10 14.5v.01" />
           </svg>
-          {notice}
+          {n}
         </p>
-      )}
+      ))}
 
       <div className="compare">
         <figure className="pane">
@@ -96,8 +103,8 @@ export default function Result({ file, previewUrl, job, output, onReset }: Props
             <span className="pane-meta">{file.name}</span>
           </figcaption>
           <div className="pane-body pane-original">
-            {isPdf && <iframe src={previewUrl} title={`Documento original: ${file.name}`} />}
-            {isImage && <img src={previewUrl} alt={`Documento original: ${file.name}`} />}
+            {isPdf && previewUrl && <iframe src={previewUrl} title={`Documento original: ${file.name}`} />}
+            {isImage && previewUrl && <img src={previewUrl} alt={`Documento original: ${file.name}`} />}
             {!isPdf && !isImage && <p className="pane-empty">La vista previa no está disponible para este tipo de archivo.</p>}
           </div>
         </figure>
@@ -127,7 +134,7 @@ export default function Result({ file, previewUrl, job, output, onReset }: Props
 
       <div className="result-foot">
         <button type="button" className="button button-ghost" onClick={onReset}>
-          Convertir otro documento
+          {resetLabel}
         </button>
       </div>
     </section>

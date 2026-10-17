@@ -16,6 +16,7 @@ export interface Job {
     page_total?: number;
     ocr_mean_conf?: number;
     ocr_low_conf_pages?: number[];
+    image_small?: boolean;
     [key: string]: unknown;
   };
   error: string | null;
@@ -91,6 +92,10 @@ export async function waitForJob(id: string, onUpdate: (job: Job) => void, signa
 
 export const outputUrl = (jobId: string, name: string) =>
   `/api/jobs/${jobId}/outputs/${encodeURIComponent(name)}`;
+
+export async function fetchBlob(url: string): Promise<Blob> {
+  return (await request(url)).blob();
+}
 
 export async function fetchText(url: string): Promise<string> {
   return (await request(url)).text();

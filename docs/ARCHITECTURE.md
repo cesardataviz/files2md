@@ -43,7 +43,7 @@ sequenceDiagram
     participant Q as Cola
     participant R as Runner
     participant E as Motor (Docling u OCR)
-    participant X as Export (Pandoc)
+    participant X as Export
 
     U->>A: POST /api/jobs (archivo + params)
     A->>A: Valida operación, extensión y tamaño
@@ -107,8 +107,8 @@ flowchart TD
 
     md --> fmt{"output"}
     fmt -- md --> outmd["archivo.md"]
-    fmt -- docx --> pdocx["Pandoc<br/>--reference-doc"]
-    fmt -- pdf --> ppdf["Pandoc + Typst"]
+    fmt -- docx --> pdocx["python-docx"]
+    fmt -- pdf --> ppdf["Typst (pip)"]
     pdocx --> outdocx["archivo.docx"]
     ppdf --> outpdf["archivo.pdf"]
 ```
@@ -116,6 +116,11 @@ flowchart TD
 - `classify` mide caracteres extraíbles por página (`MIN_CHARS_PER_PAGE`, calibrable con el benchmark).
 - `auto` sigue la tabla `PREFERENCE` de `pipeline.py`. Un PDF digital usa Docling y, si no está instalado,
   cae a OCR (queda registrado en `meta.engine_fallback_notes`).
+- **Preprocesamiento de fotos** (`preprocess.py`, OpenCV): en fotos de celular Tesseract no lee mal, sino que *no
+  detecta* zonas con reflejos o sombras (la confianza sigue alta). Por eso, antes del OCR: (1) detectar la hoja y
+  corregir la perspectiva, (2) ampliar si el lado largo es < 2200 px, (3) igualar la iluminación dividiendo por el
+  fondo estimado. Ablación en el benchmark (fotos sintéticas): CER 24,8 % → 0,0 %; cada paso por separado no basta,
+  funciona la combinación. Escaneos sin cambio (0 %). Por defecto solo se aplica a imágenes (`FILES2MD_OCR_PREPROCESS`).
 - **OCR (Tesseract):** cada página se rasteriza a 300 dpi con `pypdfium2` y Tesseract devuelve cada palabra con
   su caja, bloque, párrafo, línea y confianza (formato TSV). Con eso se reconstruye el Markdown:
   - **Párrafos:** se respetan los bloques de Tesseract y se reparan palabras cortadas con guion al final de línea.
@@ -123,17 +128,24 @@ flowchart TD
     detecta negritas del mismo tamaño y falla en páginas con muy pocas líneas.
   - **Viñetas:** Tesseract suele leer `•` como "e", "o" o "+". No se filtra por letra ("o" es una palabra en
     español), sino por geometría: un carácter suelto seguido de un hueco ≥ 0,8× la altura de la letra.
+  - **Ruido:** fragmentos de 1-2 caracteres con confianza baja se descartan; un título exige confianza ≥ 70 y al
+    menos 3 letras (en fotos, manchas grandes se leían como "títulos").
   - **Confianza:** media por página en `meta.ocr_page_conf`; las páginas con menos de 60 se listan en
     `meta.ocr_low_conf_pages` para revisarlas a mano.
   - **No soporta todavía:** tablas (salen como párrafos) y orden de lectura garantizado en varias columnas.
-- **Formato personalizado:** plantillas de Word vía `--reference-doc` (pendiente exponerlo en la API).
+- **Exportación** (`export.py`): Markdown → estructura intermedia (`mistune`) → Word (`python-docx`) o PDF (`typst`
+  de pip, con el contenido pasado como JSON a `templates/document.typ`, nunca como código). Sin programas externos.
+  Las filas cortas de tablas se completan antes de analizar (mistune descarta tablas irregulares).
+- **Formato personalizado:** plantilla de Word (`reference_doc` en `export`; pendiente exponerla en la API).
 - Post-proceso con LLM: **no incluido**. Si se añade, opt-in y con diff visible (riesgo de "corregir" cifras).
 
 ## Interfaz web
 
 Pensada para una persona que solo quiere subir un archivo y recibir el resultado:
 
-1. **Subir:** zona de arrastre; valida extensión y tamaño en el navegador antes de enviar.
+1. **Subir:** zona de arrastre para uno o varios archivos (hasta 20); valida extensión y tamaño en el navegador.
+   Con varios archivos se crea un job por archivo (el backend procesa 2 en paralelo), se muestra una lista con el
+   estado de cada uno y se puede descargar todo en un .zip (armado en el navegador con `fflate`).
 2. **Elegir formato:** tarjetas Markdown / Word / PDF. `GET /api/capabilities` dice qué formatos y motores
    existen en esta instalación; lo que falta se muestra deshabilitado con el motivo, en vez de fallar después.
    El motor queda en "Opciones avanzadas" (por defecto, automático).
@@ -163,12 +175,13 @@ peticiones externas.
 | Clasificador digital/escaneado | Implementado y probado |
 | Flujo completo con motor simulado → `.md` | Probado |
 | Motor Docling real | Implementado, **sin probar** |
-| Export docx/pdf (Pandoc + Typst) | Implementado, **sin probar**; falta instalar Typst en la imagen |
-| Motor OCR (Tesseract) | Implementado y probado con OCR real sobre documentos sintéticos; **sin probar con escaneos reales** |
+| Export docx (python-docx) y pdf (Typst por pip) | Implementado y probado; sin programas externos |
+| Motor OCR (Tesseract) + preprocesamiento de fotos | Implementado; probado con sintéticos y una foto real de libro (cobertura 90 % → 98 %) |
 | Motor VLM | Esqueleto (`NotImplementedError`) |
 | Plantillas Word personalizadas | No expuesto |
 | `RedisQueue` | Esqueleto |
-| Benchmark | Métricas CER/WER, generador sintético y runner implementados; **falta dataset real** |
+| Benchmark | CER/WER, escaneos y fotos sintéticos, runner; **falta dataset real con ground truth** |
+| Varios archivos a la vez | Implementado en la interfaz: un job por archivo, hasta 20, descarga en .zip |
 
 ## Decisiones
 

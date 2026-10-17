@@ -975,6 +975,97 @@ svg {
   justify-content: center;
 }
 
+/* ------------------------------------------------------------------ varios archivos */
+.file-list {
+  display: grid;
+  gap: 8px;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.add-more {
+  justify-self: start;
+}
+
+.batch {
+  display: grid;
+  gap: 18px;
+  padding-top: 12px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.batch-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.batch-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  min-width: 0;
+}
+
+.batch-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--cyan);
+}
+
+.batch-row.is-ok .batch-dot {
+  background: var(--success);
+}
+
+.batch-row.is-error .batch-dot {
+  background: var(--error-text);
+}
+
+.batch-row.is-busy .batch-dot {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.batch-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.batch-status {
+  margin: 2px 0 0;
+  font-size: 0.86rem;
+  color: var(--text-muted);
+}
+
+.batch-row.is-error .batch-status {
+  color: var(--error-text);
+}
+
+.batch-actions {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+.progress-thin {
+  height: 4px;
+  margin-top: 8px;
+}
+
 /* ------------------------------------------------------------------ failure */
 .failure {
   max-width: 620px;

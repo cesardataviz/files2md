@@ -3,18 +3,19 @@ import { useRef, useState } from "react";
 interface Props {
   accepts: string[];
   maxMb: number;
-  onFile: (file: File) => void;
+  maxFiles: number;
+  onFiles: (files: File[]) => void;
 }
 
 const FRIENDLY_TYPES = "PDF, JPG, PNG, WebP, TIFF y Word";
 
-export default function DropZone({ accepts, maxMb, onFile }: Props) {
+export default function DropZone({ accepts, maxMb, maxFiles, onFiles }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
   function take(files: FileList | null) {
-    const file = files?.[0];
-    if (file) onFile(file);
+    const list = Array.from(files ?? []);
+    if (list.length) onFiles(list);
   }
 
   return (
@@ -41,17 +42,18 @@ export default function DropZone({ accepts, maxMb, onFile }: Props) {
         <path d="M28 6v9h9" />
         <path d="M25 37V24m-5 5 5-5 5 5" />
       </svg>
-      <p className="dropzone-title">Arrastra tu documento aquí</p>
+      <p className="dropzone-title">Arrastra tus documentos aquí</p>
       <p className="dropzone-or">o</p>
       <button type="button" className="button button-secondary" onClick={() => input.current?.click()}>
-        Elegir archivo
+        Elegir archivos
       </button>
       <p className="dropzone-hint">
-        {FRIENDLY_TYPES} · hasta {maxMb} MB
+        {FRIENDLY_TYPES} · hasta {maxFiles} archivos de {maxMb} MB cada uno
       </p>
       <input
         ref={input}
         type="file"
+        multiple
         hidden
         accept={accepts.map((e) => `.${e}`).join(",")}
         onChange={(e) => {

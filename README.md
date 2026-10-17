@@ -11,7 +11,7 @@ archivos no salen de tu máquina.
 
 1. Clasifica la entrada: PDF digital, escaneado, mixto, imagen u Office.
 2. Elige el motor: determinista (Docling) para documentos digitales; OCR o VLM para escaneados.
-3. Exporta: Markdown directo, o Word/PDF vía Pandoc (con plantillas de estilo para Word).
+3. Exporta: Markdown directo, o Word/PDF generados en Python (sin instalar programas aparte).
 
 ```mermaid
 flowchart TD
@@ -30,8 +30,8 @@ flowchart TD
 
     md --> fmt{"output"}
     fmt -- md --> outmd["archivo.md"]
-    fmt -- docx --> pdocx["Pandoc<br/>--reference-doc"]
-    fmt -- pdf --> ppdf["Pandoc + Typst"]
+    fmt -- docx --> pdocx["python-docx"]
+    fmt -- pdf --> ppdf["Typst (pip)"]
     pdocx --> outdocx["archivo.docx"]
     ppdf --> outpdf["archivo.pdf"]
 ```
@@ -43,8 +43,7 @@ Los diagramas de componentes y del ciclo de vida de un job están en [docs/ARCHI
 
 ```bash
 cp .env.example .env
-docker compose --profile lite up --build      # PDFs digitales y Office -> Markdown
-# docker compose --profile export up --build  # + exportar a Word/PDF (Pandoc)
+docker compose --profile lite up --build      # PDFs digitales y Office -> Markdown, Word o PDF
 # docker compose --profile full up --build    # + OCR para escaneados (Tesseract, español e inglés)
 ```
 
@@ -94,6 +93,8 @@ python benchmarks/run.py                 # CER, WER y segundos por página, por 
 ```
 
 Para medir con tus propios documentos, ver [benchmarks/README.md](benchmarks/README.md).
+
+Word y PDF se generan con librerías de Python (`python-docx` y `typst`): no hace falta instalar Pandoc ni nada aparte.
 
 ## API
 

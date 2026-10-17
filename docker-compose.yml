@@ -1,4 +1,4 @@
-# Perfiles: lite | export | full. Usa uno a la vez (mismo puerto). Todos publican solo en 127.0.0.1.
+# Perfiles: lite | full (lite + OCR). Usa uno a la vez (mismo puerto). Todos publican solo en 127.0.0.1.
 
 x-app-env: &app-env
   FILES2MD_HOST: 0.0.0.0             # dentro del contenedor; el puerto se publica solo en loopback
@@ -16,13 +16,6 @@ services:
   lite:
     profiles: ["lite"]
     build: { context: ., dockerfile: docker/Dockerfile, target: lite }
-    environment: *app-env
-    ports: ["127.0.0.1:8000:8000"]
-    volumes: *volumes
-
-  export:
-    profiles: ["export"]
-    build: { context: ., dockerfile: docker/Dockerfile, target: export }
     environment: *app-env
     ports: ["127.0.0.1:8000:8000"]
     volumes: *volumes
