@@ -103,7 +103,9 @@ if (-not (Test-Path $indice) -or (Get-Item $indice).LastWriteTime -lt $ultimoCam
 if ($AccesoDirecto -and $EsWindows) {
     $escritorio = [Environment]::GetFolderPath('Desktop')
     $acceso = (New-Object -ComObject WScript.Shell).CreateShortcut((Join-Path $escritorio "$Nombre.lnk"))
-    $acceso.TargetPath = Join-Path $Raiz 'iniciar.bat'
+    # Se abre a través de cmd.exe: Windows no deja anclar a la barra de tareas un acceso directo que apunta a un .bat
+    $acceso.TargetPath = $env:ComSpec
+    $acceso.Arguments = '/c "' + (Join-Path $Raiz 'iniciar.bat') + '"'
     $acceso.WorkingDirectory = $Raiz
     $icono = Join-Path $Frontend 'public\favicon.ico'
     if (Test-Path $icono) { $acceso.IconLocation = $icono }
