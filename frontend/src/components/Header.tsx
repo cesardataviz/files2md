@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ProductIcon from "./ProductIcon";
 
 type Theme = "light" | "dark";
 
@@ -29,10 +30,13 @@ export default function Header() {
   return (
     <header className="topbar">
       <a className="brand" href="/" aria-label="files2md, inicio">
-        <img src="/logo.png" alt="" width={34} height={34} />
+        <ProductIcon />
         <span className="brand-name">
           files<span className="brand-two">2</span>md
         </span>
+      </a>
+      <a className="by-softcom" href="https://softcom.com.pe" target="_blank" rel="noreferrer">
+        por <img src="/softcom.png" alt="" width={16} height={16} /> Softcom
       </a>
       <div className="topbar-actions">
         <span className="privacy-pill" title="Los archivos no se envían a internet">

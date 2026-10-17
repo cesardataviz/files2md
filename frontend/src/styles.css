@@ -19,6 +19,8 @@
   --accent: var(--cyan);
   --accent-text: #0b6e8c;
   --accent-tint: #e5f7fd;
+  --logo-ink: var(--navy);
+  --logo-paper: var(--paper);
   --primary-bg: var(--navy);
   --primary-fg: #ffffff;
   --primary-hover: #0a1475;
@@ -53,6 +55,8 @@
   --accent-tint: rgb(8 184 238 / 0.12);
   --primary-bg: var(--cyan);
   --primary-fg: var(--navy);
+  --logo-ink: #f3f4fb;
+  --logo-paper: var(--navy);
   --primary-hover: #36c8f3;
   --pixel: #5a61a6;
   --sheet: #121860;
@@ -156,6 +160,30 @@ svg {
 
 .brand-two {
   color: var(--accent-text);
+}
+
+/* "por Softcom": marca paraguas, discreta al lado del nombre del producto */
+.by-softcom {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: auto;
+  margin-left: 14px;
+  padding-left: 14px;
+  border-left: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.by-softcom:hover {
+  color: var(--text);
+}
+
+@media (max-width: 560px) {
+  .by-softcom {
+    display: none;
+  }
 }
 
 .topbar-actions {

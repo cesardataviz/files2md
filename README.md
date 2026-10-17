@@ -1,4 +1,8 @@
+<img src="frontend/public/logo.svg" alt="" width="72" height="72">
+
 # files2md
+
+Un producto de **[Softcom](https://softcom.com.pe)**. Desarrollado por Cesar Romero.
 
 Convierte PDFs, imágenes y documentos Office a **Markdown**, **Word** o **PDF** ordenado. **100% local**: tus
 archivos no salen de tu máquina.
@@ -123,13 +127,12 @@ curl -O http://127.0.0.1:8000/api/jobs/<job_id>/outputs/informe.md
 - Límite de tamaño de subida y borrado automático por TTL.
 - Sin telemetría. Los motores VLM o de API externa están apagados salvo que los actives.
 
-## Proyecto hermano
-
-[pdf-toolkit](https://github.com/) — combinar, reordenar y convertir PDFs e imágenes en el navegador.
-
 ## Licencia
 
 [MIT](LICENSE). Ver `THIRD_PARTY_NOTICES.md` para las dependencias y sus licencias.
 
-El logo (`frontend/public/logo.png`) y la identidad visual **no** están cubiertos por la licencia MIT:
-si haces un fork, reemplázalos por los tuyos.
+© 2026 SOFTWARE Y COMUNICACIONES SOCIEDAD COMERCIAL DE RESPONSABILIDAD LIMITADA - SOFTCOM S.R.L.
+Código bajo licencia MIT.
+
+El nombre Softcom, su logo, el ícono de files2md (`frontend/public/logo.*`, `favicon.*`, `softcom.png`) y la identidad
+visual son marcas de Softcom y **no** están cubiertos por la licencia MIT: si haces un fork, reemplázalos por los tuyos.

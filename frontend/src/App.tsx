@@ -243,7 +243,7 @@ export default function App() {
         )}
       </main>
       <footer className="footer">
-        <span>files2md · código abierto con licencia MIT</span>
+        <span>files2md · un producto de Softcom · código abierto con licencia MIT</span>
         <a href="/docs">API para desarrolladores</a>
       </footer>
     </div>
