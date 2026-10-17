@@ -39,6 +39,18 @@ flowchart TD
 Cada conversión registra qué motor se usó y cuánto tardó. Esos datos alimentan el [benchmark](benchmarks/README.md).
 Los diagramas de componentes y del ciclo de vida de un job están en [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+## Uso en Windows con doble clic
+
+Requisitos (una sola vez): [Python 3.11+](https://www.python.org/downloads/) y [Node.js LTS](https://nodejs.org/) y [Tesseract](#desarrollo-sin-docker) con el idioma español.
+
+1. Doble clic en **`iniciar.bat`**.
+2. La primera vez instala lo necesario (unos minutos). Las siguientes veces abre en segundos.
+3. Se abre el navegador en http://127.0.0.1:8000. Deja la ventana negra abierta mientras lo uses; ciérrala para apagarlo.
+
+`iniciar.bat` solo hace trabajo cuando hace falta: reinstala dependencias si cambió `pyproject.toml` o
+`package-lock.json`, y recompila la interfaz si cambió algún archivo (por ejemplo, después de un `git pull`).
+Opciones: `iniciar.bat -AccesoDirecto` crea un acceso directo en el Escritorio; `iniciar.bat -Puerto 9000` usa otro puerto.
+
 ## Arranque rápido (Docker)
 
 ```bash
