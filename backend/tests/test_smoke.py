@@ -93,7 +93,7 @@ def test_pipeline_end_to_end_with_stub_engine(tmp_path, monkeypatch):
     engine = pipeline.ENGINES["docling"]
     monkeypatch.setattr(engine, "available", lambda settings: (True, ""))
     monkeypatch.setattr(
-        engine, "convert", lambda path, settings: ParseResult("# Informe\n\nTexto.", "docling")
+        engine, "convert", lambda path, settings, progress=None: ParseResult("# Informe\n\nTexto.", "docling")
     )
     with make_client(tmp_path) as client:
         job = submit(client, "informe.pdf", text_pdf(LONG_TEXT), output="md")
@@ -134,3 +134,39 @@ def test_token_required_when_configured(tmp_path):
         assert client.get("/api/operations").status_code == 401
         ok = client.get("/api/operations", headers={"Authorization": "Bearer secreto"})
         assert ok.status_code == 200
+
+
+def test_capabilities_reports_formats_and_engines(tmp_path):
+    with make_client(tmp_path) as client:
+        caps = client.get("/api/capabilities").json()
+        assert caps["outputs"]["md"] == {"available": True, "reason": ""}
+        assert set(caps["outputs"]) == {"md", "docx", "pdf"}
+        assert set(caps["engines"]) == {"docling", "ocr", "vlm"}
+        assert "pdf" in caps["accepts"]
+        assert caps["max_upload_mb"] == 200
+
+
+def test_swagger_shows_file_picker(tmp_path):
+    with make_client(tmp_path) as client:
+        schema = client.get("/openapi.json").json()
+        files = schema["components"]["schemas"]["Body_create_job_api_jobs_post"]["properties"]["files"]
+        assert files["items"]["format"] == "binary"
+
+
+def test_non_markdown_output_also_delivers_markdown(tmp_path, monkeypatch):
+    engine = pipeline.ENGINES["docling"]
+    monkeypatch.setattr(engine, "available", lambda settings: (True, ""))
+    monkeypatch.setattr(engine, "convert", lambda path, settings, progress=None: ParseResult("# Hola", "docling"))
+
+    def fake_export(markdown, stem, fmt, out_dir, **kw):
+        (out_dir / f"{stem}.md").write_text(markdown, encoding="utf-8")
+        out = out_dir / f"{stem}.{fmt}"
+        out.write_bytes(b"docx")
+        return out
+
+    monkeypatch.setattr(pipeline, "export", fake_export)
+    with make_client(tmp_path) as client:
+        job = submit(client, "informe.pdf", text_pdf(LONG_TEXT), output="docx")
+        assert job["state"] == "succeeded", job["error"]
+        assert job["outputs"] == ["informe.docx", "informe.md"]
+        assert job["meta"]["stage"] == "done"

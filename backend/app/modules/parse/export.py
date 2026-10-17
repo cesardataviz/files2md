@@ -12,6 +12,20 @@ from pathlib import Path
 PANDOC_FORMATS = {"docx", "pdf"}
 
 
+def output_formats() -> dict[str, dict]:
+    """Formatos de salida disponibles en esta instalación y, si no, qué falta instalar."""
+    pandoc = shutil.which("pandoc") is not None
+    typst = shutil.which("typst") is not None
+    return {
+        "md": {"available": True, "reason": ""},
+        "docx": {"available": pandoc, "reason": "" if pandoc else "Requiere Pandoc"},
+        "pdf": {
+            "available": pandoc and typst,
+            "reason": "" if pandoc and typst else "Requiere Pandoc y Typst",
+        },
+    }
+
+
 def export(markdown: str, stem: str, fmt: str, out_dir: Path, *, reference_doc: Path | None = None,
            timeout: int = 300) -> Path:
     md_path = out_dir / f"{stem}.md"

@@ -3,6 +3,8 @@
 Convierte PDFs, imágenes y documentos Office a **Markdown**, **Word** o **PDF** ordenado. **100% local**: tus
 archivos no salen de tu máquina.
 
+![Interfaz de files2md: subir un documento y elegir el formato de salida](docs/img/files2md-interfaz.png)
+
 > Estado: en desarrollo. Ver [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) para qué está implementado y qué no.
 
 ## Cómo funciona
@@ -61,7 +63,7 @@ pytest
 
 Requiere Python 3.11 o superior.
 
-Frontend (en otra terminal):
+Interfaz web (en otra terminal). Abre la dirección que muestra Vite, normalmente http://localhost:5173:
 
 ```bash
 cd frontend
@@ -115,3 +117,6 @@ curl -O http://127.0.0.1:8000/api/jobs/<job_id>/outputs/informe.md
 ## Licencia
 
 [MIT](LICENSE). Ver `THIRD_PARTY_NOTICES.md` para las dependencias y sus licencias.
+
+El logo (`frontend/public/logo.png`) y la identidad visual **no** están cubiertos por la licencia MIT:
+si haces un fork, reemplázalos por los tuyos.

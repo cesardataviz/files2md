@@ -5,7 +5,7 @@ import importlib.util
 from pathlib import Path
 
 from app.modules.parse.classify import InputKind
-from app.modules.parse.engines.base import Engine, ParseResult
+from app.modules.parse.engines.base import Engine, ParseResult, ProgressFn
 
 
 class DoclingEngine(Engine):
@@ -17,7 +17,8 @@ class DoclingEngine(Engine):
             return False, "Docling no instalado (pip install '.[parse]')"
         return True, ""
 
-    def convert(self, path: Path, settings) -> ParseResult:
+    def convert(self, path: Path, settings, progress: ProgressFn | None = None) -> ParseResult:
+        # Docling no expone progreso por página: la interfaz muestra la etapa sin contador.
         from docling.document_converter import DocumentConverter  # import perezoso: es pesado
 
         result = DocumentConverter().convert(str(path))

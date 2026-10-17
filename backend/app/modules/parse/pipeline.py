@@ -60,6 +60,7 @@ def to_document(ctx: JobContext) -> None:
     requested = str(ctx.job.params.get("engine", "auto"))
     fmt = str(ctx.job.params.get("output", "md")).lower()
 
+    ctx.job.meta["stage"] = "analyzing"  # la interfaz traduce la etapa a lenguaje humano
     ctx.progress(0.05)
     cls = classify(src)
     ctx.job.meta["input_kind"] = cls.kind.value
@@ -69,14 +70,24 @@ def to_document(ctx: JobContext) -> None:
     ctx.job.meta["engine"] = engine.name
     if notes:
         ctx.job.meta["engine_fallback_notes"] = notes
-    ctx.progress(0.2)
+    ctx.job.meta["stage"] = "reading"
+    ctx.progress(0.1)
 
-    result = engine.convert(src, ctx.settings)
+    def on_page(page: int, total: int) -> None:
+        ctx.job.meta.update(page=page, page_total=total)
+        ctx.progress(0.1 + 0.8 * page / max(total, 1))  # leer es ~80% del trabajo
+
+    result = engine.convert(src, ctx.settings, progress=on_page)
     ctx.job.meta.update(result.meta)
-    ctx.progress(0.8)
+    ctx.job.meta["stage"] = "exporting"
+    ctx.progress(0.92)
 
     out = export(
         result.markdown, src.stem, fmt, ctx.storage.output_dir(ctx.job.id),
         timeout=getattr(ctx.settings, "job_timeout_s", 600),
     )
     ctx.add_output(out)
+    if fmt != "md":
+        # El .md siempre se entrega también: la interfaz lo usa para la vista previa.
+        ctx.add_output(out.with_suffix(".md"))
+    ctx.job.meta["stage"] = "done"

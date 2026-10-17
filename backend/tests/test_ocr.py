@@ -136,3 +136,16 @@ def test_digital_pdf_falls_back_to_ocr_when_docling_missing(tmp_path, monkeypatc
     engine, notes = pipeline.select_engine(InputKind.digital, "auto", Settings())
     assert engine.name == "ocr"
     assert notes == ["docling: Docling no instalado"]
+
+
+@requires_tesseract
+def test_ocr_reports_progress_per_page(tmp_path):
+    doc = SAMPLES[1]
+    pdf = tmp_path / "dos_paginas.pdf"
+    pages = [render(doc, seed=1), render(doc, seed=2)]
+    pages[0].save(pdf, "PDF", resolution=200, save_all=True, append_images=pages[1:])
+
+    calls = []
+    result = TesseractEngine().convert(pdf, Settings(), progress=lambda p, t: calls.append((p, t)))
+    assert calls == [(1, 2), (2, 2)]
+    assert "<!-- página 2 -->" in result.markdown

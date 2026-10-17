@@ -129,6 +129,23 @@ flowchart TD
 - **Formato personalizado:** plantillas de Word vía `--reference-doc` (pendiente exponerlo en la API).
 - Post-proceso con LLM: **no incluido**. Si se añade, opt-in y con diff visible (riesgo de "corregir" cifras).
 
+## Interfaz web
+
+Pensada para una persona que solo quiere subir un archivo y recibir el resultado:
+
+1. **Subir:** zona de arrastre; valida extensión y tamaño en el navegador antes de enviar.
+2. **Elegir formato:** tarjetas Markdown / Word / PDF. `GET /api/capabilities` dice qué formatos y motores
+   existen en esta instalación; lo que falta se muestra deshabilitado con el motivo, en vez de fallar después.
+   El motor queda en "Opciones avanzadas" (por defecto, automático).
+3. **Progreso:** `meta.stage` (`analyzing` → `reading` → `exporting` → `done`) y `meta.page`/`page_total`
+   se traducen a frases ("Leyendo el texto · página 2 de 5"). La animación de escaneo es la firma visual.
+4. **Resultado:** original (renderizado en el navegador, sin volver a pedirlo al servidor) y resultado lado
+   a lado. El `.md` se entrega siempre, aunque se pida Word o PDF, porque alimenta la vista previa.
+
+Seguridad: el Markdown se convierte a HTML con `marked` y se sanitiza con DOMPurify antes de mostrarse,
+porque proviene de un documento subido. Las fuentes van empaquetadas (no Google Fonts) para no hacer
+peticiones externas.
+
 ## Contrato del job
 
 | Campo | Significado |
@@ -136,7 +153,7 @@ flowchart TD
 | `operation` | `parse.to_document` |
 | `params` | `engine`: `auto\|docling\|ocr\|vlm` · `output`: `md\|docx\|pdf` |
 | `state` | `queued → running → succeeded \| failed \| cancelled` |
-| `meta` | `input_kind`, `pages`, `engine`, `engine_fallback_notes`, `elapsed_s`; con OCR además `ocr_mean_conf`, `ocr_page_conf`, `ocr_low_conf_pages`, `ocr_langs`, `ocr_dpi` |
+| `meta` | `stage`, `page`, `page_total`, `input_kind`, `pages`, `engine`, `engine_fallback_notes`, `elapsed_s`; con OCR además `ocr_mean_conf`, `ocr_page_conf`, `ocr_low_conf_pages`, `ocr_langs`, `ocr_dpi` |
 
 ## Estado de implementación
 

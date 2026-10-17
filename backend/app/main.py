@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from functools import partial
 
 from fastapi import FastAPI
+from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
 
 from app import modules  # noqa: F401  # registra las operaciones (efecto lateral intencional)
@@ -39,6 +40,19 @@ async def _purge_loop(app: FastAPI) -> None:
         await asyncio.sleep(600)
 
 
+def _fix_file_inputs(schema: dict) -> None:
+    """FastAPI documenta los archivos como `contentMediaType` (OpenAPI 3.1), pero la página /docs
+    (Swagger UI) solo muestra el selector de archivos con `format: binary`. Se añade ese campo."""
+    if isinstance(schema, dict):
+        if schema.get("type") == "string" and "contentMediaType" in schema:
+            schema.setdefault("format", "binary")
+        for value in schema.values():
+            _fix_file_inputs(value)
+    elif isinstance(schema, list):
+        for item in schema:
+            _fix_file_inputs(item)
+
+
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
 
@@ -61,6 +75,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.queue = build_queue(settings, partial(run_job, repo=repo, storage=storage, settings=settings))
 
     app.include_router(router)
+
+    def custom_openapi() -> dict:
+        if app.openapi_schema is None:
+            schema = get_openapi(title=app.title, version=app.version, routes=app.routes)
+            _fix_file_inputs(schema)
+            app.openapi_schema = schema
+        return app.openapi_schema
+
+    app.openapi = custom_openapi
     if settings.frontend_dir.is_dir():
         app.mount("/", StaticFiles(directory=settings.frontend_dir, html=True), name="frontend")
     return app

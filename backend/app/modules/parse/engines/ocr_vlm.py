@@ -9,7 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.modules.parse.classify import InputKind
-from app.modules.parse.engines.base import Engine, ParseResult
+from app.modules.parse.engines.base import Engine, ParseResult, ProgressFn
 
 
 class VlmEngine(Engine):
@@ -21,5 +21,5 @@ class VlmEngine(Engine):
             return False, "VLM deshabilitado (FILES2MD_ENABLE_VLM y FILES2MD_VLM_ENDPOINT)"
         return False, "Motor VLM aún no implementado"
 
-    def convert(self, path: Path, settings) -> ParseResult:
+    def convert(self, path: Path, settings, progress: ProgressFn | None = None) -> ParseResult:
         raise NotImplementedError("TODO: render de página -> VLM -> Markdown, con verificación")

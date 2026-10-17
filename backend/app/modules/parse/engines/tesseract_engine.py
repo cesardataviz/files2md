@@ -28,7 +28,7 @@ from pathlib import Path
 from PIL import Image, ImageSequence
 
 from app.modules.parse.classify import InputKind
-from app.modules.parse.engines.base import Engine, ParseResult
+from app.modules.parse.engines.base import Engine, ParseResult, ProgressFn
 
 HEADING_RATIO = 1.3  # una línea es candidata a título si su letra es >= 1.3x la mediana de la página
 H1_RATIO = 1.6  # a partir de aquí, título principal (#). Ej.: 18 pt sobre texto de 11 pt = 1.64
@@ -188,6 +188,19 @@ def _flatten(img: Image.Image) -> Image.Image:
     return img.convert("RGB") if img.mode not in ("RGB", "L") else img
 
 
+def page_count(path: Path) -> int:
+    if path.suffix.lower() == ".pdf":
+        import pypdfium2 as pdfium
+
+        pdf = pdfium.PdfDocument(str(path))
+        try:
+            return len(pdf)
+        finally:
+            pdf.close()
+    with Image.open(path) as img:
+        return getattr(img, "n_frames", 1)
+
+
 def iter_page_images(path: Path, dpi: int) -> Iterator[Image.Image]:
     """Una imagen por página, generada de a una para no cargar todo el documento en memoria."""
     if path.suffix.lower() == ".pdf":
@@ -233,8 +246,9 @@ class TesseractEngine(Engine):
             return False, f"Faltan idiomas de Tesseract: {', '.join(sorted(missing))}"
         return True, ""
 
-    def convert(self, path: Path, settings) -> ParseResult:
+    def convert(self, path: Path, settings, progress: ProgressFn | None = None) -> ParseResult:
         cmd = find_tesseract(settings)
+        total = page_count(path)
         timeout = getattr(settings, "job_timeout_s", 600)
         pages_md: list[str] = []
         page_conf: list[float] = []
@@ -250,6 +264,8 @@ class TesseractEngine(Engine):
                 pages_md.append(md)
                 page_conf.append(round(statistics.fmean(confs), 1) if confs else 0.0)
                 all_conf.extend(confs)
+                if progress:
+                    progress(n, total)
 
         if len(pages_md) > 1:
             # Comentario HTML: invisible al renderizar, pero permite rastrear de qué página vino cada texto.

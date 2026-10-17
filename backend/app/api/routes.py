@@ -31,6 +31,25 @@ def health():
     return {"status": "ok"}
 
 
+@router.get("/capabilities", dependencies=[Auth])
+def capabilities(request: Request):
+    """Qué puede hacer ESTA instalación. La interfaz lo usa para no ofrecer lo que fallaría."""
+    from app.modules.parse.export import output_formats
+    from app.modules.parse.pipeline import ALL_EXTS, ENGINES
+
+    settings = request.app.state.settings
+    engines = {}
+    for name, engine in ENGINES.items():
+        ok, reason = engine.available(settings)
+        engines[name] = {"available": ok, "reason": reason}
+    return {
+        "max_upload_mb": settings.max_upload_mb,
+        "accepts": ALL_EXTS,
+        "outputs": output_formats(),
+        "engines": engines,
+    }
+
+
 @router.get("/operations", dependencies=[Auth])
 def list_operations():
     return [
